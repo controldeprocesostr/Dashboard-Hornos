@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Tablero de Hornos</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<style>
+:root {--bg:#121212;--panel:#1e1e1e;--accent:#00e5ff;--muted:#c5d6de;}
+html, body {height:100%; margin:0; background:var(--bg); font-family:Arial,sans-serif; color:#fff;}
+.wrap {width:100%; height:100%; display:flex; flex-direction:column; padding:2px; box-sizing:border-box;}
+h1 {text-align:center; color:var(--accent); margin:2px 0; font-size:0.9rem; position:relative; transition: font-size 0.3s;}
+h1.small{font-size:0.7rem;}
+#btnHistoricos {position:absolute; right:10px; top:50%; transform:translateY(-50%); opacity:0; transition:opacity 0.3s;}
+h1:hover #btnHistoricos {opacity:1;}
+#activosGrid {display:grid; grid-template-columns: repeat(3,1fr); gap:4px; flex:1; padding:2px;}
+.card {display:flex; flex-direction:column; border-radius:6px; border:1px solid #222; background:var(--panel); padding:2px; box-sizing:border-box; cursor:pointer;}
+.card h3 {margin:0; font-size:0.8rem; color:var(--accent);}
+.horas {font-size:0.7rem; color:var(--muted); margin-bottom:2px;}
+.chart-container {display:flex; flex-direction:column; flex:1; overflow:hidden; padding-bottom:20px;}
+.card canvas {flex:1; width:100% !important; height:100% !important;}
+.btn-group {display:flex; justify-content:center; gap:2px; margin:2px 0;}
+button {cursor:pointer; background:var(--accent); border:none; padding:4px; border-radius:4px; font-weight:700;}
+.modal {position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,.95); display:none; justify-content:center; align-items:center; z-index:1000; overflow:hidden;}
+.modal-content {background:#1e1e1e; padding:4px; border-radius:10px; width:95%; height:95%; max-width:1800px; display:flex; flex-direction:column;}
+.modal-header {display:flex; justify-content:space-between; align-items:center;}
+.modal-header h3{color:var(--accent); margin:0; font-size:1rem;}
+.modal-body{flex:1; display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:4px; overflow:auto; padding:2px;}
+.modal-body .card{flex-direction:column; height:300px;}
+.modal-body::-webkit-scrollbar {width:6px;}
+.modal-body::-webkit-scrollbar-track {background:var(--panel); border-radius:3px;}
+.modal-body::-webkit-scrollbar-thumb {background:var(--accent); border-radius:3px;}
+#modalObs {color: var(--muted); font-size:0.9rem; margin-bottom:4px; overflow-y:auto; max-height:60px; white-space: pre-wrap;}
+.filters {display:flex; gap:4px; flex-wrap:wrap; justify-content:center; margin-bottom:4px;}
+.filters input, .filters select {padding:4px; border-radius:4px; border:1px solid #2a2a2a; background:#fff; color:#000; font-size:0.8rem;}
+@media(max-width:1024px){ #activosGrid{ grid-template-columns: repeat(auto-fit, minmax(280px,1fr)); } .card{height:250px;} }
+@media(max-width:600px){ .card{height:220px;} }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <h1 id="tituloActivos">Tablero Hornos
+    <button id="btnHistoricos">Históricos</button>
+  </h1>
+  <div id="activosGrid"></div>
+</div>
+
+<div class="modal" id="modalHistoricos">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Históricos</h3>
+      <button onclick="cerrarHistoricos()">Cerrar</button>
+    </div>
+    <div class="filters">
+      <label>Fecha: <input type="date" id="fechaHist"></label>
+      <label>Turno:
+        <select id="turnoHist">
+          <option value="">Todos</option>
+          <option value="T1">T1</option>
+          <option value="T2">T2</option>
+        </select>
+      </label>
+      <label>Horno:
+        <select id="hornoHist">
+          <option value="">Todos</option>
+          <option value="Horno 5">Horno 5</option>
+          <option value="Horno 7-3">Horno 7-3</option>
+          <option value="Horno 9-1">Horno 9-1</option>
+          <option value="Horno 9-2">Horno 9-2</option>
+          <option value="Horno Italiano">Horno Italiano</option>
+          <option value="Horno 7-4">Horno 7-4</option>
+          <option value="Horno 7-5">Horno 7-5</option>
+          <option value="Horno 9-3">Horno 9-3</option>
+          <option value="Horno 10">Horno 10</option>
+        </select>
+      </label>
+      <button id="btnBuscarHist">Filtrar</button>
+    </div>
+    <div class="btn-group">
+      <button id="btnExportExcel">Exportar Excel</button>
+      <button id="btnExportPDF">Exportar PDF</button>
+      <button id="btnExportJPG">Exportar JPG</button>
+    </div>
+    <div class="modal-body" id="historicosGrid"></div>
+  </div>
+</div>
+
+<div class="modal" id="modalGrafica">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 id="modalTitulo"></h3>
+      <button onclick="cerrarModal()">Cerrar</button>
+    </div>
+    <div id="modalObs">Observaciones</div>
+    <canvas id="modalChart" style="flex:1;"></canvas>
+  </div>
+</div>
+
+<script>
+// Firebase
+const firebaseConfig={
+  apiKey:"AIzaSyAB4UlwaVJzc4U4VbmddLf4mejKAOvTufw",
+  authDomain:"hornosapp-60887.firebaseapp.com",
+  databaseURL:"https://hornosapp-60887-default-rtdb.firebaseio.com",
+  projectId:"hornosapp-60887"
+};
+firebase.initializeApp(firebaseConfig);
+const db=firebase.database();
+const activosGrid=document.getElementById('activosGrid');
+const historicosGrid=document.getElementById('historicosGrid');
+const chartsActivos={};
+let modalChartInstance=null;
+
+// Lista fija de hornos
+const hornos = [
+  "Horno 5",
+  "Horno 7-3",
+  "Horno 9-1",
+  "Horno 9-2",
+  "Horno Italiano",
+  "Horno 7-4",
+  "Horno 7-5",
+  "Horno 9-3",
+  "Horno 10"
+];
+
+// Crear tarjetas de hornos siempre visibles
+hornos.forEach((nombreHorno) => {
+  const card = document.createElement('div'); 
+  card.className = 'card';
+  card.innerHTML = `<h3>${nombreHorno}</h3>
+    <div class="horas" id="meta-${nombreHorno}">Ciclo: --</div>
+    <div class="chart-container"><canvas id="chart-${nombreHorno}"></canvas></div>`;
+  activosGrid.appendChild(card);
+
+  chartsActivos[nombreHorno] = new Chart(document.getElementById(`chart-${nombreHorno}`).getContext('2d'), {
+  type:'line',
+  data:{
+    labels:[], 
+    datasets:[
+      {label:'Zona 1', borderColor:'red', data:[], fill:false},
+      {label:'Zona 2', borderColor:'green', data:[], fill:false},
+      {label:'Zona 3', borderColor:'blue', data:[], fill:false},
+      {label:'Zona 4', borderColor:'purple', data:[], fill:false},
+      {label:'SetPoint', borderColor:'orange', borderDash:[6,4], data:[], fill:false}
+    ]
+  },
+  options:{
+    responsive:true, 
+    maintainAspectRatio:false,
+    scales:{
+      x:{ ticks:{ color:'#ffffff' } },  // ← color blanco eje X
+      y:{ ticks:{ color:'#ffffff' }, title:{ display:true, text:'Temperatura', color:'#ffffff' } }  // ← color blanco eje Y
+    }
+  }
+});
+
+
+  // doble click para modal
+  card.addEventListener('dblclick', () => {
+    if(modalChartInstance) modalChartInstance.destroy();
+    const ctx = document.getElementById('modalChart').getContext('2d');
+    modalChartInstance = new Chart(ctx, {type:'line', data: chartsActivos[nombreHorno].data, options:{
+    responsive:true,
+    maintainAspectRatio:false,
+    scales:{
+      x:{ ticks:{ color:'#ffffff' } },
+      y:{ ticks:{ color:'#ffffff' }, title:{ display:true, text:'Temperatura', color:'#ffffff' } }
+    }
+  }
+});
+    document.getElementById('modalTitulo').textContent = `${nombreHorno} - Activo`;
+    document.getElementById('modalObs').textContent = 'Observaciones';
+    document.getElementById('modalGrafica').style.display = 'flex';
+  });
+});
+
+// Ajustar altura
+function ajustarAlturaActivos(){
+  if(window.innerWidth>1024){
+    const rowHeight = (window.innerHeight - 50)/3;
+    document.querySelectorAll('#activosGrid .card').forEach(c=>{ c.style.height=rowHeight+'px'; });
+  }
+}
+window.addEventListener('resize', ajustarAlturaActivos);
+ajustarAlturaActivos();
+
+// Datos activos: actualizar gráficas y meta
+db.ref('ciclosActivos').on('value', snap => {
+  const porHorno = {};
+  snap.forEach(ch => {
+    const node = ch.val();
+    const meta = node.meta || node;
+    const horno = meta.horno || 'Horno5';
+    const lecturas = node.lecturas ? Object.values(node.lecturas) : [];
+    if(!porHorno[horno]) porHorno[horno] = {lect: [], meta: {}};
+    porHorno[horno].lect.push(...lecturas);
+    porHorno[horno].meta = meta;
+  });
+
+  hornos.forEach(nombreHorno => {
+    const obj = porHorno[nombreHorno] || {lect: [], meta: {}};
+    const regs = obj.lect.sort((a,b)=>(a.hora||'').localeCompare(b.hora||''));
+    document.getElementById(`meta-${nombreHorno}`).innerText = regs.length ?
+      `Inicio: ${obj.meta.horaInicio||'--'} | Fin: ${obj.meta.horaFin||'--'} | Turno: ${obj.meta.turno||'--'}` :
+      'Ciclo: --';
+    const chart = chartsActivos[nombreHorno];
+    chart.data.labels = regs.map(r=>r.hora||'');
+    chart.data.datasets[0].data = regs.map(r=>r.zona1||0);
+    chart.data.datasets[1].data = regs.map(r=>r.zona2||0);
+    chart.data.datasets[2].data = regs.map(r=>r.zona3||0);
+    chart.data.datasets[3].data = regs.map(r=>r.zona4||0);
+    chart.data.datasets[4].data = regs.map(r=>r.setPoint||0);
+    chart.update('none');
+  });
+});
+
+// Botón históricos
+document.getElementById('btnHistoricos').addEventListener('click', ()=> {
+  document.getElementById('modalHistoricos').style.display='flex';
+});
+
+// Filtrar históricos con doble click
+document.getElementById('btnBuscarHist').addEventListener('click', async ()=> {
+  historicosGrid.innerHTML='';
+  const fecha=document.getElementById('fechaHist').value;
+  const turno=document.getElementById('turnoHist').value;
+  const hornoSel=document.getElementById('hornoHist').value;
+  const snap=await db.ref('historicos').once('value');
+  const all=snap.val()||{};
+  Object.entries(all).forEach(([id,node])=>{
+    const meta=node.meta||node;
+    if(fecha && meta.fecha!==fecha) return;
+    if(turno && meta.turno!==turno) return;
+    if(hornoSel && meta.horno!==hornoSel) return;
+    const lecturas=node.lecturas?Object.values(node.lecturas):[];
+    lecturas.sort((a,b)=>(a.hora||'').localeCompare(b.hora||''));
+    const card=document.createElement('div'); card.className='card';
+    card.innerHTML=`<h3>${meta.horno} (Histórico)</h3>
+      <div class="horas">Inicio: ${meta.horaInicio||''} | Fin: ${meta.horaFin||''}</div>
+      <div class="chart-container"><canvas id="hist-${id}"></canvas></div>`;
+    historicosGrid.appendChild(card);
+    const ctx=document.getElementById(`hist-${id}`).getContext('2d');
+    const histChart=new Chart(ctx,{
+      type:'line',
+      data:{labels: lecturas.map(r=>r.hora||''), datasets:[
+        {label:'Zona 1', data:lecturas.map(r=>r.zona1||0), borderColor:'red', fill:false},
+        {label:'Zona 2', data:lecturas.map(r=>r.zona2||0), borderColor:'green', fill:false},
+        {label:'Zona 3', data:lecturas.map(r=>r.zona3||0), borderColor:'blue', fill:false},
+        {label:'Zona 4', data:lecturas.map(r=>r.zona4||0), borderColor:'purple', fill:false},
+        {label:'SetPoint', data:lecturas.map(r=>r.setPoint||0), borderColor:'orange', borderDash:[6,4], fill:false}
+      ]},
+     options:{
+    responsive:true, 
+    maintainAspectRatio:false,
+    scales:{
+      x:{ ticks:{ color:'#ffffff' } },  // ← color blanco eje X
+      y:{ ticks:{ color:'#ffffff' }, title:{ display:true, text:'Temperatura', color:'#ffffff' } }  // ← color blanco eje Y
+    }
+  }
+});
+
+    // doble click históricos
+    card.addEventListener('dblclick', ()=>{
+      modalChartInstance && modalChartInstance.destroy();
+      const ctxM=document.getElementById('modalChart').getContext('2d');
+      modalChartInstance=new Chart(ctxM,{type:'line', data:histChart.data, options:{
+    responsive:true,
+    maintainAspectRatio:false,
+    scales:{
+      x:{ ticks:{ color:'#ffffff' } },
+      y:{ ticks:{ color:'#ffffff' }, title:{ display:true, text:'Temperatura', color:'#ffffff' } }
+    }
+  }
+});
+      document.getElementById('modalTitulo').textContent=`${meta.horno} - Histórico`;
+      document.getElementById('modalObs').textContent=meta.observaciones||'Sin observaciones';
+      document.getElementById('modalGrafica').style.display='flex';
+    });
+  });
+});
+
+// Cerrar modales
+function cerrarModal(){document.getElementById('modalGrafica').style.display='none';}
+function cerrarHistoricos(){document.getElementById('modalHistoricos').style.display='none';}
+
+// Exportaciones
+document.getElementById('btnExportExcel').addEventListener('click', ()=>{ 
+  html2canvas(historicosGrid).then(canvas=>{
+    const wb=XLSX.utils.book_new(); 
+    const ws=XLSX.utils.table_to_sheet(historicosGrid); 
+    XLSX.utils.book_append_sheet(wb, ws, "Históricos"); 
+    XLSX.writeFile(wb,"historicos.xlsx"); 
+  }); 
+});
+document.getElementById('btnExportPDF').addEventListener('click', ()=>{ 
+  html2canvas(historicosGrid).then(canvas=>{
+    const pdf=new jspdf.jsPDF('l','pt','a4'); 
+    const img=canvas.toDataURL('image/png'); 
+    pdf.addImage(img,'PNG',20,20,800,500); 
+    pdf.save('historicos.pdf'); 
+  }); 
+});
+document.getElementById('btnExportJPG').addEventListener('click', ()=>{ 
+  html2canvas(historicosGrid).then(canvas=>{
+    const a=document.createElement('a'); 
+    a.href=canvas.toDataURL('image/jpeg'); 
+    a.download='historicos.jpg'; 
+    a.click(); 
+  }); 
+});
+</script>
+</body>
+</html>
