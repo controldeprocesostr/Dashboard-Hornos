@@ -251,33 +251,34 @@ document.getElementById('btnBuscarHist').addEventListener('click', async ()=> {
     labels: lecturas.map(r => r.hora || ''),
     datasets: [
       {
-  label: 'Zona 1',
-  data: lecturas.map(r => (r.zona1 !== undefined && r.zona1 !== "") ? r.zona1 : null),
-  fill: false
-},
-{
-  label: 'Zona 2',
-  data: lecturas.map(r => (r.zona2 !== undefined && r.zona2 !== "") ? r.zona2 : null),
-  fill: false
-},
-{
-  label: 'Zona 3',
-  data: lecturas.map(r => (r.zona3 !== undefined && r.zona3 !== "") ? r.zona3 : null),
-  fill: false
-},
-{
-  label: 'Zona 4',
-  data: lecturas.map(r => (r.zona4 !== undefined && r.zona4 !== "") ? r.zona4 : null),
-  fill: false
-},
-{
-  label: 'SetPoint',
-  data: lecturas.map(r => (r.setPoint !== undefined && r.setPoint !== "") ? r.setPoint : null),
-  borderColor: 'orange',
-  borderDash: [6,4],
-  fill: false
-},
-
+        label: 'Zona 1',
+        data: lecturas.map(r => (r.zona1 !== undefined && r.zona1 !== "") ? r.zona1 : null),
+        fill: false
+      },
+      {
+        label: 'Zona 2',
+        data: lecturas.map(r => (r.zona2 !== undefined && r.zona2 !== "") ? r.zona2 : null),
+        fill: false
+      },
+      {
+        label: 'Zona 3',
+        data: lecturas.map(r => (r.zona3 !== undefined && r.zona3 !== "") ? r.zona3 : null),
+        fill: false
+      },
+      {
+        label: 'Zona 4',
+        data: lecturas.map(r => (r.zona4 !== undefined && r.zona4 !== "") ? r.zona4 : null),
+        fill: false
+      },
+      {
+        label: 'SetPoint',
+        data: lecturas.map(r => (r.setPoint !== undefined && r.setPoint !== "") ? r.setPoint : null),
+        borderColor: 'orange',
+        borderDash: [6,4],
+        fill: false
+      }
+    ]
+  },
   options: {
     responsive: true,
     maintainAspectRatio: false,
@@ -287,6 +288,7 @@ document.getElementById('btnBuscarHist').addEventListener('click', async ()=> {
     }
   }
 });
+
 
 
     // doble click históricos
@@ -341,6 +343,7 @@ document.getElementById('btnExportJPG').addEventListener('click', ()=>{
 </script>
 </body>
 </html>
+
 
 
 
