@@ -247,29 +247,54 @@ document.getElementById('btnBuscarHist').addEventListener('click', async ()=> {
       <div class="chart-container"><canvas id="hist-${id}"></canvas></div>`;
     historicosGrid.appendChild(card);
     const ctx=document.getElementById(`hist-${id}`).getContext('2d');
-    const histChart=new Chart(ctx,{
-      type:'line',
-      data:{labels: lecturas.map(r=>r.hora||''), datasets:[
-        {label:'Zona 1', data:lecturas.map(r=> (r.zona1 !== undefined && r.zona1 !== "" && r.zona1 != 0) ? r.zona1 : null), ...}
-        {label:'Zona 2', data:lecturas.map(r=> (r.zona2 !== undefined && r.zona2 !== "" && r.zona2 != 0) ? r.zona2 : null), ...}
-        {label:'Zona 3', data:lecturas.map(r=> (r.zona3 !== undefined && r.zona3 !== "" && r.zona3 != 0) ? r.zona3 : null), ...}
-        {label:'Zona 4', data:lecturas.map(r=> (r.zona4 !== undefined && r.zona4 !== "" && r.zona4 != 0) ? r.zona4 : null), ...}
-        {label:'SetPoint', data:lecturas.map(r=> (r.setPoint !== undefined && r.setPoint !== "" && r.setPoint != 0) ? r.setPoint : null), borderColor:'orange', borderDash:[6,4], fill:false}
-  ),
-  borderColor: 'orange',
-  borderDash: [6,4],
-  fill: false
-}
-      ]},
-     options:{
-    responsive:true, 
-    maintainAspectRatio:false,
-    scales:{
-      x:{ ticks:{ color:'#ffffff' } },  // ← color blanco eje X
-      y:{ ticks:{ color:'#ffffff' }, title:{ display:true, text:'Temperatura', color:'#ffffff' } }  // ← color blanco eje Y
+    const histChart = new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels: lecturas.map(r => r.hora || ''),
+    datasets: [
+      {
+        label: 'Zona 1',
+        data: lecturas.map(r => (r.zona1 !== undefined && r.zona1 !== "" && r.zona1 != 0) ? r.zona1 : null),
+        borderColor: 'red',
+        fill: false
+      },
+      {
+        label: 'Zona 2',
+        data: lecturas.map(r => (r.zona2 !== undefined && r.zona2 !== "" && r.zona2 != 0) ? r.zona2 : null),
+        borderColor: 'green',
+        fill: false
+      },
+      {
+        label: 'Zona 3',
+        data: lecturas.map(r => (r.zona3 !== undefined && r.zona3 !== "" && r.zona3 != 0) ? r.zona3 : null),
+        borderColor: 'blue',
+        fill: false
+      },
+      {
+        label: 'Zona 4',
+        data: lecturas.map(r => (r.zona4 !== undefined && r.zona4 !== "" && r.zona4 != 0) ? r.zona4 : null),
+        borderColor: 'purple',
+        fill: false
+      },
+      {
+        label: 'SetPoint',
+        data: lecturas.map(r => (r.setPoint !== undefined && r.setPoint !== "" && r.setPoint != 0) ? r.setPoint : null),
+        borderColor: 'orange',
+        borderDash: [6, 4],
+        fill: false
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      x: { ticks: { color: '#ffffff' } },
+      y: { ticks: { color: '#ffffff' }, title: { display: true, text: 'Temperatura', color: '#ffffff' } }
     }
   }
 });
+
 
     // doble click históricos
     card.addEventListener('dblclick', ()=>{
@@ -323,4 +348,5 @@ document.getElementById('btnExportJPG').addEventListener('click', ()=>{
 </script>
 </body>
 </html>
+
 
