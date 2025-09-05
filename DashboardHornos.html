@@ -318,9 +318,12 @@ document.getElementById('btnBuscarHist').addEventListener('click', async () => {
       const ctxM = document.getElementById('modalChart').getContext('2d');
       modalChartInstance = new Chart(ctxM, {
         type: 'line',
-        data: histChart.data,
-        options: histChart.options
-      });
+        data: { 
+  labels: lecturas.map(r => r.hora || ''), 
+  datasets: histChart.data.datasets 
+},
+options: histChart.options
+});
       document.getElementById('modalTitulo').textContent = `${meta.horno} - Histórico`;
       document.getElementById('modalObs').textContent = meta.observaciones || 'Sin observaciones';
       document.getElementById('modalGrafica').style.display = 'flex';
@@ -360,6 +363,7 @@ document.getElementById('btnExportJPG').addEventListener('click', ()=>{
 </script>
 </body>
 </html>
+
 
 
 
