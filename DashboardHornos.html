@@ -211,13 +211,11 @@ db.ref('ciclosActivos').on('value', snap => {
       `Inicio: ${obj.meta.horaInicio||'--'} | Fin: ${obj.meta.horaFin||'--'} | Turno: ${obj.meta.turno||'--'}` :
       'Ciclo: --';
     const chart = chartsActivos[nombreHorno];
-    chart.data.labels = regs.map(r=>r.hora||'');
-    chart.data.datasets[0].data = regs.map(r=> (r.zona1 !== undefined && r.zona1 !== "" && r.zona1 != 0) ? r.zona1 : null);
-    chart.data.datasets[1].data = regs.map(r=> (r.zona2 !== undefined && r.zona2 !== "" && r.zona2 != 0) ? r.zona2 : null);
-    chart.data.datasets[2].data = regs.map(r=> (r.zona3 !== undefined && r.zona3 !== "" && r.zona3 != 0) ? r.zona3 : null);
-    chart.data.datasets[3].data = regs.map(r=> (r.zona4 !== undefined && r.zona4 !== "" && r.zona4 != 0) ? r.zona4 : null);
-    chart.data.datasets[4].data = regs.map(r=> (r.setPoint !== undefined && r.setPoint !== "" && r.setPoint != 0) ? r.setPoint : null);
-
+    chart.data.datasets[0].data = regs.map(r=> (r.zona1 !== undefined && r.zona1 !== "") ? r.zona1 : null);
+    chart.data.datasets[1].data = regs.map(r=> (r.zona2 !== undefined && r.zona2 !== "") ? r.zona2 : null);
+    chart.data.datasets[2].data = regs.map(r=> (r.zona3 !== undefined && r.zona3 !== "") ? r.zona3 : null);
+    chart.data.datasets[3].data = regs.map(r=> (r.zona4 !== undefined && r.zona4 !== "") ? r.zona4 : null);
+   chart.data.datasets[4].data = regs.map(r=> (r.setPoint !== undefined && r.setPoint !== "") ? r.setPoint : null);
   });
 });
 
@@ -253,38 +251,33 @@ document.getElementById('btnBuscarHist').addEventListener('click', async ()=> {
     labels: lecturas.map(r => r.hora || ''),
     datasets: [
       {
-        label: 'Zona 1',
-        data: lecturas.map(r => (r.zona1 !== undefined && r.zona1 !== "" && r.zona1 != 0) ? r.zona1 : null),
-        borderColor: 'red',
-        fill: false
-      },
-      {
-        label: 'Zona 2',
-        data: lecturas.map(r => (r.zona2 !== undefined && r.zona2 !== "" && r.zona2 != 0) ? r.zona2 : null),
-        borderColor: 'green',
-        fill: false
-      },
-      {
-        label: 'Zona 3',
-        data: lecturas.map(r => (r.zona3 !== undefined && r.zona3 !== "" && r.zona3 != 0) ? r.zona3 : null),
-        borderColor: 'blue',
-        fill: false
-      },
-      {
-        label: 'Zona 4',
-        data: lecturas.map(r => (r.zona4 !== undefined && r.zona4 !== "" && r.zona4 != 0) ? r.zona4 : null),
-        borderColor: 'purple',
-        fill: false
-      },
-      {
-        label: 'SetPoint',
-        data: lecturas.map(r => (r.setPoint !== undefined && r.setPoint !== "" && r.setPoint != 0) ? r.setPoint : null),
-        borderColor: 'orange',
-        borderDash: [6, 4],
-        fill: false
-      }
-    ]
-  },
+  label: 'Zona 1',
+  data: lecturas.map(r => (r.zona1 !== undefined && r.zona1 !== "") ? r.zona1 : null),
+  fill: false
+},
+{
+  label: 'Zona 2',
+  data: lecturas.map(r => (r.zona2 !== undefined && r.zona2 !== "") ? r.zona2 : null),
+  fill: false
+},
+{
+  label: 'Zona 3',
+  data: lecturas.map(r => (r.zona3 !== undefined && r.zona3 !== "") ? r.zona3 : null),
+  fill: false
+},
+{
+  label: 'Zona 4',
+  data: lecturas.map(r => (r.zona4 !== undefined && r.zona4 !== "") ? r.zona4 : null),
+  fill: false
+},
+{
+  label: 'SetPoint',
+  data: lecturas.map(r => (r.setPoint !== undefined && r.setPoint !== "") ? r.setPoint : null),
+  borderColor: 'orange',
+  borderDash: [6,4],
+  fill: false
+}
+
   options: {
     responsive: true,
     maintainAspectRatio: false,
@@ -348,5 +341,6 @@ document.getElementById('btnExportJPG').addEventListener('click', ()=>{
 </script>
 </body>
 </html>
+
 
 
