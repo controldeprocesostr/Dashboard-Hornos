@@ -206,7 +206,7 @@ db.ref('ciclosActivos').on('value', snap => {
 
   hornos.forEach(nombreHorno => {
     const obj = porHorno[nombreHorno] || {lect: [], meta: {}};
-    const regs = obj.lect.reverse(); // invierte el orden
+    const regs = obj.lect; 
     document.getElementById(`meta-${nombreHorno}`).innerText = regs.length ?
       `Inicio: ${obj.meta.horaInicio||'--'} | Fin: ${obj.meta.horaFin||'--'} | Turno: ${obj.meta.turno||'--'}` :
       'Ciclo: --';
@@ -238,7 +238,7 @@ document.getElementById('btnBuscarHist').addEventListener('click', async ()=> {
     if(fecha && meta.fecha!==fecha) return;
     if(turno && meta.turno!==turno) return;
     if(hornoSel && meta.horno!==hornoSel) return;
-    const lecturas = node.lecturas ? Object.values(node.lecturas).reverse() : [];
+    const lecturas = node.lecturas ? Object.values(node.lecturas) : [];
     const card=document.createElement('div'); card.className='card';
     card.innerHTML=`<h3>${meta.horno} - ${meta.fecha || 'Sin fecha'}</h3>
   <div class="horas">Inicio: ${meta.horaInicio||''} | Fin: ${meta.horaFin||''}</div>
@@ -317,6 +317,7 @@ document.getElementById('btnExportJPG').addEventListener('click', ()=>{
 </script>
 </body>
 </html>
+
 
 
 
