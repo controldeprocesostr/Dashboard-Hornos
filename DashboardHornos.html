@@ -323,15 +323,8 @@ function cerrarHistoricos(){document.getElementById('modalHistoricos').style.dis
 // Exportaciones
 document.getElementById('btnExportExcel').addEventListener('click', ()=>{ 
   html2canvas(historicosGrid).then(canvas=>{
-    const wb=XLSX.utils.book_new(); 
-    const datos = [];
-historicosGrid.querySelectorAll('.card').forEach(card => {
-  const titulo = card.querySelector('h3').innerText;
-  const horas = card.querySelector('.horas').innerText;
-  datos.push({Horno: titulo, Horas: horas});
-});
-const ws = XLSX.utils.json_to_sheet(datos);
- 
+    const wb=XLSX.utils.book_new();
+    const ws = XLSX.utils.table_to_sheet(historicosGrid);
     XLSX.utils.book_append_sheet(wb, ws, "Históricos"); 
     XLSX.writeFile(wb,"historicos.xlsx"); 
   }); 
@@ -355,6 +348,7 @@ document.getElementById('btnExportJPG').addEventListener('click', ()=>{
 </script>
 </body>
 </html>
+
 
 
 
