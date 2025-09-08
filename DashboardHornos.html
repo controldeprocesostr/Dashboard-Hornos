@@ -206,10 +206,18 @@ db.ref('ciclosActivos').on('value', snap => {
 
   hornos.forEach(nombreHorno => {
     const obj = porHorno[nombreHorno] || {lect: [], meta: {}};
-    const regs = obj.lect; 
-    document.getElementById(`meta-${nombreHorno}`).innerText = regs.length ?
-      `Inicio: ${obj.meta.horaInicio||'--'} | Fin: ${obj.meta.horaFin||'--'} | Turno: ${obj.meta.turno||'--'}` :
-      'Ciclo: --';
+    let regs = obj.lect; 
+
+// Ordenar por horaInicio si existe
+regs.sort((a,b) => {
+  if(a.hora && b.hora) return a.hora.localeCompare(b.hora);
+  return 0;
+});
+
+document.getElementById(`meta-${nombreHorno}`).innerText = regs.length ?
+  `Inicio: ${obj.meta.horaInicio||'--'} | Fin: ${obj.meta.horaFin||'--'} | Turno: ${obj.meta.turno||'--'}` :
+  'Ciclo: --';
+
     const chart = chartsActivos[nombreHorno];
     chart.data.datasets[0].data = regs.map(r => (r.zona1 !== undefined && r.zona1 !== "" && r.zona1 != 0) ? r.zona1 : null);
 chart.data.datasets[1].data = regs.map(r => (r.zona2 !== undefined && r.zona2 !== "" && r.zona2 != 0) ? r.zona2 : null);
@@ -238,7 +246,14 @@ document.getElementById('btnBuscarHist').addEventListener('click', async ()=> {
     if(fecha && meta.fecha!==fecha) return;
     if(turno && meta.turno!==turno) return;
     if(hornoSel && meta.horno!==hornoSel) return;
-    const lecturas = node.lecturas ? Object.values(node.lecturas) : [];
+    let lecturas = node.lecturas ? Object.values(node.lecturas) : [];
+
+// Ordenar por hora si existe
+lecturas.sort((a,b) => {
+  if(a.hora && b.hora) return a.hora.localeCompare(b.hora);
+  return 0;
+});
+
     const card=document.createElement('div'); card.className='card';
     card.innerHTML=`<h3>${meta.horno} - ${meta.fecha || 'Sin fecha'}</h3>
   <div class="horas">Inicio: ${meta.horaInicio||''} | Fin: ${meta.horaFin||''}</div>
@@ -317,6 +332,7 @@ document.getElementById('btnExportJPG').addEventListener('click', ()=>{
 </script>
 </body>
 </html>
+
 
 
 
