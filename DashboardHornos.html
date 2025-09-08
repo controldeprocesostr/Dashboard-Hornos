@@ -197,142 +197,93 @@ db.ref('ciclosActivos').on('value', snap => {
   snap.forEach(ch => {
     const node = ch.val();
     const meta = node.meta || node;
-    const horno = meta.horno || 'Horno 5';
+    const horno = meta.horno || 'Horno5';
     const lecturas = node.lecturas ? Object.values(node.lecturas) : [];
-    if (!porHorno[horno]) porHorno[horno] = { lect: [], meta: {} };
+    if(!porHorno[horno]) porHorno[horno] = {lect: [], meta: {}};
     porHorno[horno].lect.push(...lecturas);
     porHorno[horno].meta = meta;
   });
 
   hornos.forEach(nombreHorno => {
-    const obj = porHorno[nombreHorno] || { lect: [], meta: {} };
-    const regs = obj.lect.sort((a, b) => (a.hora || '').localeCompare(b.hora || ''));
-
-    // Actualizar texto meta
+    const obj = porHorno[nombreHorno] || {lect: [], meta: {}};
+    const regs = obj.lect.sort((a,b)=>(a.hora||'').localeCompare(b.hora||''));
     document.getElementById(`meta-${nombreHorno}`).innerText = regs.length ?
-      `Inicio: ${obj.meta.horaInicio || '--'} | Fin: ${obj.meta.horaFin || '--'} | Turno: ${obj.meta.turno || '--'}` :
+      `Inicio: ${obj.meta.horaInicio||'--'} | Fin: ${obj.meta.horaFin||'--'} | Turno: ${obj.meta.turno||'--'}` :
       'Ciclo: --';
-
-    // Actualizar gráfico
     const chart = chartsActivos[nombreHorno];
-    chart.data.labels = regs.map(r => r.hora || ''); // ← ahora sí muestra el eje X con horas
-
+    chart.data.labels = regs.map(r=>r.hora||'');
     chart.data.datasets[0].data = regs.map(r => (r.zona1 !== undefined && r.zona1 !== "" && r.zona1 != 0) ? r.zona1 : null);
-    chart.data.datasets[1].data = regs.map(r => (r.zona2 !== undefined && r.zona2 !== "" && r.zona2 != 0) ? r.zona2 : null);
-    chart.data.datasets[2].data = regs.map(r => (r.zona3 !== undefined && r.zona3 !== "" && r.zona3 != 0) ? r.zona3 : null);
-    chart.data.datasets[3].data = regs.map(r => (r.zona4 !== undefined && r.zona4 !== "" && r.zona4 != 0) ? r.zona4 : null);
-    chart.data.datasets[4].data = regs.map(r => (r.setPoint !== undefined && r.setPoint !== "" && r.setPoint != 0) ? r.setPoint : null);
-
-    chart.update(); // ← IMPORTANTE: fuerza la actualización en tiempo real
+chart.data.datasets[1].data = regs.map(r => (r.zona2 !== undefined && r.zona2 !== "" && r.zona2 != 0) ? r.zona2 : null);
+chart.data.datasets[2].data = regs.map(r => (r.zona3 !== undefined && r.zona3 !== "" && r.zona3 != 0) ? r.zona3 : null);
+chart.data.datasets[3].data = regs.map(r => (r.zona4 !== undefined && r.zona4 !== "" && r.zona4 != 0) ? r.zona4 : null);
+chart.data.datasets[4].data = regs.map(r => (r.setPoint !== undefined && r.setPoint !== "" && r.setPoint != 0) ? r.setPoint : null);
+    chart.update('none');
   });
 });
-
 
 // Botón históricos
 document.getElementById('btnHistoricos').addEventListener('click', ()=> {
   document.getElementById('modalHistoricos').style.display='flex';
 });
 
-// Filtrar y mostrar históricos
-document.getElementById('btnBuscarHist').addEventListener('click', async () => {
-  historicosGrid.innerHTML = '';
-  const fecha = document.getElementById('fechaHist').value;
-  const turno = document.getElementById('turnoHist').value;
-  const hornoSel = document.getElementById('hornoHist').value;
-
-  const snap = await db.ref('historicos').once('value');
-  const all = snap.val() || {};
-
-  Object.entries(all).forEach(([id, node]) => {
-    const meta = node.meta || node;
-
-    // Aplicar filtros
-    if (fecha && meta.fecha !== fecha) return;
-    if (turno && meta.turno !== turno) return;
-    if (hornoSel && meta.horno !== hornoSel) return;
-
-    const lecturas = node.lecturas ? Object.values(node.lecturas) : [];
-    lecturas.sort((a, b) => (a.hora || '').localeCompare(b.hora || ''));
-
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.innerHTML = `
-      <h3>${meta.horno} (Histórico)</h3>
-      <div class="horas">Inicio: ${meta.horaInicio || ''} | Fin: ${meta.horaFin || ''}</div>
-      <div class="chart-container"><canvas id="hist-${id}"></canvas></div>
-    `;
+// Filtrar históricos con doble click
+document.getElementById('btnBuscarHist').addEventListener('click', async ()=> {
+  historicosGrid.innerHTML='';
+  const fecha=document.getElementById('fechaHist').value;
+  const turno=document.getElementById('turnoHist').value;
+  const hornoSel=document.getElementById('hornoHist').value;
+  const snap=await db.ref('historicos').once('value');
+  const all=snap.val()||{};
+  Object.entries(all).forEach(([id,node])=>{
+    const meta=node.meta||node;
+    if(fecha && meta.fecha!==fecha) return;
+    if(turno && meta.turno!==turno) return;
+    if(hornoSel && meta.horno!==hornoSel) return;
+    const lecturas=node.lecturas?Object.values(node.lecturas):[];
+    lecturas.sort((a,b)=>(a.hora||'').localeCompare(b.hora||''));
+    const card=document.createElement('div'); card.className='card';
+    card.innerHTML=`<h3>${meta.horno} - ${meta.fecha || 'Sin fecha'}</h3>
+  <div class="horas">Inicio: ${meta.horaInicio||''} | Fin: ${meta.horaFin||''}</div>
+  <div class="chart-container"><canvas id="hist-${id}"></canvas></div>`;
     historicosGrid.appendChild(card);
+    const ctx=document.getElementById(`hist-${id}`).getContext('2d');
+    const histChart=new Chart(ctx,{
+      type:'line',
+      data:{labels: lecturas.map(r=>r.hora||''), datasets:[
+  {label:'Zona 1', data:lecturas.map(r => (r.zona1 !== undefined && r.zona1 !== "" && r.zona1 != 0) ? r.zona1 : null), borderColor:'red', fill:false},
+  {label:'Zona 2', data:lecturas.map(r => (r.zona2 !== undefined && r.zona2 !== "" && r.zona2 != 0) ? r.zona2 : null), borderColor:'green', fill:false},
+  {label:'Zona 3', data:lecturas.map(r => (r.zona3 !== undefined && r.zona3 !== "" && r.zona3 != 0) ? r.zona3 : null), borderColor:'blue', fill:false},
+  {label:'Zona 4', data:lecturas.map(r => (r.zona4 !== undefined && r.zona4 !== "" && r.zona4 != 0) ? r.zona4 : null), borderColor:'purple', fill:false},
+  {label:'SetPoint', data:lecturas.map(r => (r.setPoint !== undefined && r.setPoint !== "" && r.setPoint != 0) ? r.setPoint : null), borderColor:'orange', borderDash:[6,4], fill:false}
+]},
 
-    const ctx = document.getElementById(`hist-${id}`).getContext('2d');
-    const histChart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: lecturas.map(r => r.hora || ''),
-        datasets: [
-          {
-            label: 'Zona 1',
-            data: lecturas.map(r => (r.zona1 !== undefined && r.zona1 !== "" && r.zona1 != 0) ? r.zona1 : null),
-            borderColor: 'red',
-            fill: false
-          },
-          {
-            label: 'Zona 2',
-            data: lecturas.map(r => (r.zona2 !== undefined && r.zona2 !== "" && r.zona2 != 0) ? r.zona2 : null),
-            borderColor: 'green',
-            fill: false
-          },
-          {
-            label: 'Zona 3',
-            data: lecturas.map(r => (r.zona3 !== undefined && r.zona3 !== "" && r.zona3 != 0) ? r.zona3 : null),
-            borderColor: 'blue',
-            fill: false
-          },
-          {
-            label: 'Zona 4',
-            data: lecturas.map(r => (r.zona4 !== undefined && r.zona4 !== "" && r.zona4 != 0) ? r.zona4 : null),
-            borderColor: 'purple',
-            fill: false
-          },
-          {
-            label: 'SetPoint',
-            data: lecturas.map(r => (r.setPoint !== undefined && r.setPoint !== "" && r.setPoint != 0) ? r.setPoint : null),
-            borderColor: 'orange',
-            borderDash: [6, 4],
-            fill: false
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          x: { ticks: { color: '#ffffff' } },
-          y: { ticks: { color: '#ffffff' }, title: { display: true, text: 'Temperatura', color: '#ffffff' } }
-        }
-      }
-    });
-
-    // Doble click en la tarjeta de histórico → abrir modal con esa misma data
-    card.addEventListener('dblclick', () => {
-  modalChartInstance && modalChartInstance.destroy();
-  const ctxM = document.getElementById('modalChart').getContext('2d');
-  modalChartInstance = new Chart(ctxM, {
-    type: 'line',
-    data: {
-      labels: lecturas.map(r => r.hora || ''),
-      datasets: [
-        ...histChart.data.datasets.map(ds => ({
-          ...ds,
-          data: [...ds.data] // ← crea copia real de los datos
-        }))
-      ]
-    },
-    options: { ...histChart.options }
-  });
-  document.getElementById('modalTitulo').textContent = `${meta.horno} - Histórico`;
-  document.getElementById('modalObs').textContent = meta.observaciones || 'Sin observaciones';
-  document.getElementById('modalGrafica').style.display = 'flex';
+     options:{
+    responsive:true, 
+    maintainAspectRatio:false,
+    scales:{
+      x:{ ticks:{ color:'#ffffff' } },  // ← color blanco eje X
+      y:{ ticks:{ color:'#ffffff' }, title:{ display:true, text:'Temperatura', color:'#ffffff' } }  // ← color blanco eje Y
+    }
+  }
 });
+
+    // doble click históricos
+    card.addEventListener('dblclick', ()=>{
+      modalChartInstance && modalChartInstance.destroy();
+      const ctxM=document.getElementById('modalChart').getContext('2d');
+      modalChartInstance=new Chart(ctxM,{type:'line', data:histChart.data, options:{
+    responsive:true,
+    maintainAspectRatio:false,
+    scales:{
+      x:{ ticks:{ color:'#ffffff' } },
+      y:{ ticks:{ color:'#ffffff' }, title:{ display:true, text:'Temperatura', color:'#ffffff' } }
+    }
+  }
+});
+      document.getElementById('modalTitulo').textContent=`${meta.horno} - Histórico`;
+      document.getElementById('modalObs').textContent=meta.observaciones||'Sin observaciones';
+      document.getElementById('modalGrafica').style.display='flex';
+    });
   });
 });
 
@@ -368,6 +319,8 @@ document.getElementById('btnExportJPG').addEventListener('click', ()=>{
 </script>
 </body>
 </html>
+
+
 
 
 
