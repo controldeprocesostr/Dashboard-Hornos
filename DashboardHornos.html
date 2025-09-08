@@ -224,17 +224,6 @@ db.ref('ciclosActivos').on('value', snap => {
   });
 });
 
-
-    const chart = chartsActivos[nombreHorno];
-    chart.data.datasets[0].data = regs.map(r => (r.zona1 !== undefined && r.zona1 !== "" && r.zona1 != 0) ? r.zona1 : null);
-chart.data.datasets[1].data = regs.map(r => (r.zona2 !== undefined && r.zona2 !== "" && r.zona2 != 0) ? r.zona2 : null);
-chart.data.datasets[2].data = regs.map(r => (r.zona3 !== undefined && r.zona3 !== "" && r.zona3 != 0) ? r.zona3 : null);
-chart.data.datasets[3].data = regs.map(r => (r.zona4 !== undefined && r.zona4 !== "" && r.zona4 != 0) ? r.zona4 : null);
-chart.data.datasets[4].data = regs.map(r => (r.setPoint !== undefined && r.setPoint !== "" && r.setPoint != 0) ? r.setPoint : null);
-    chart.update('none');
-  });
-});
-
 // Botón históricos
 document.getElementById('btnHistoricos').addEventListener('click', ()=> {
   document.getElementById('modalHistoricos').style.display='flex';
@@ -348,6 +337,7 @@ document.getElementById('btnExportJPG').addEventListener('click', ()=>{
 </script>
 </body>
 </html>
+
 
 
 
