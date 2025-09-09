@@ -229,8 +229,8 @@ db.ref('ciclosActivos').on('value', snap => {
     chart.update('none');
 
     document.getElementById(`meta-${nombreHorno}`).innerText = regs.length ?
-      `Inicio: ${obj.meta.horaInicio||'--'} | Fin: ${obj.meta.horaFin||'--'} | Turno: ${obj.meta.turno||'--'}` :
-      'Ciclo: --';
+  `Inicio: ${toAMPM(obj.meta.horaInicio)} | Fin: ${toAMPM(obj.meta.horaFin)} | Turno: ${obj.meta.turno||'--'}` :
+  'Ciclo: --';
   });
 });
 
@@ -386,6 +386,7 @@ document.getElementById('btnExportJPG').addEventListener('click', ()=>{
 </script>
 </body>
 </html>
+
 
 
 
