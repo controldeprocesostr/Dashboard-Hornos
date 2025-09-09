@@ -191,6 +191,16 @@ function ajustarAlturaActivos(){
 window.addEventListener('resize', ajustarAlturaActivos);
 ajustarAlturaActivos();
 
+  function toAMPM(hora) {
+  if (!hora) return '--';
+  const [h, m] = hora.split(':');
+  let hh = parseInt(h, 10);
+  const ampm = hh >= 12 ? 'PM' : 'AM';
+  hh = hh % 12 || 12;
+  return `${hh}:${m} ${ampm}`;
+}
+
+
 // Datos activos: actualizar gráficas y meta
 db.ref('ciclosActivos').on('value', snap => {
   const porHorno = {};
@@ -210,7 +220,7 @@ db.ref('ciclosActivos').on('value', snap => {
 
     // Mantener orden de llegada, no ordenar
     const chart = chartsActivos[nombreHorno];
-    chart.data.labels = regs.map(r => r.hora || '--'); // solo hora
+    chart.data.labels = regs.map(r => toAMPM(r.hora));
     chart.data.datasets[0].data = regs.map(r => r.zona1 ? parseFloat(r.zona1) : null);
     chart.data.datasets[1].data = regs.map(r => r.zona2 ? parseFloat(r.zona2) : null);
     chart.data.datasets[2].data = regs.map(r => r.zona3 ? parseFloat(r.zona3) : null);
@@ -252,7 +262,7 @@ document.getElementById('btnBuscarHist').addEventListener('click', async ()=> {
     card.className = 'card';
     card.innerHTML = `
       <h3>${meta.horno} - ${meta.fecha || 'Sin fecha'}</h3>
-      <div class="horas">Inicio: ${meta.horaInicio || ''} | Fin: ${meta.horaFin || ''}</div>
+      <div class="horas">Inicio: ${toAMPM(meta.horaInicio)} | Fin: ${toAMPM(meta.horaFin)}</div>
       <div class="chart-container"><canvas id="hist-${id}"></canvas></div>
     `;
     historicosGrid.appendChild(card);
@@ -262,7 +272,7 @@ document.getElementById('btnBuscarHist').addEventListener('click', async ()=> {
     const histChart = new Chart(ctx, {
       type: 'line',
       data: {
-        labels: lecturas.map(r => r.hora || '--'), // eje X con horas
+        labels: lecturas.map(r => toAMPM(r.hora)), // eje X con horas
         datasets: [
           {label:'Zona 1', data: lecturas.map(r => (r.zona1 != null && r.zona1 !== "" && r.zona1 != 0) ? r.zona1 : null), borderColor:'red', fill:false},
           {label:'Zona 2', data: lecturas.map(r => (r.zona2 != null && r.zona2 !== "" && r.zona2 != 0) ? r.zona2 : null), borderColor:'green', fill:false},
@@ -376,6 +386,7 @@ document.getElementById('btnExportJPG').addEventListener('click', ()=>{
 </script>
 </body>
 </html>
+
 
 
 
