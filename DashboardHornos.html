@@ -310,14 +310,53 @@ function cerrarModal(){document.getElementById('modalGrafica').style.display='no
 function cerrarHistoricos(){document.getElementById('modalHistoricos').style.display='none';}
 
 // Exportaciones
-document.getElementById('btnExportExcel').addEventListener('click', ()=>{ 
-  html2canvas(historicosGrid).then(canvas=>{
-    const wb=XLSX.utils.book_new();
-    const ws = XLSX.utils.table_to_sheet(historicosGrid);
-    XLSX.utils.book_append_sheet(wb, ws, "Históricos"); 
-    XLSX.writeFile(wb,"historicos.xlsx"); 
-  }); 
+document.getElementById('btnExportExcel').addEventListener('click', async () => {
+  const fecha = document.getElementById('fechaHist').value;
+  const turno = document.getElementById('turnoHist').value;
+  const hornoSel = document.getElementById('hornoHist').value;
+
+  const snap = await db.ref('historicos').once('value');
+  const all = snap.val() || {};
+
+  // Construir array de datos para Excel
+  const excelData = [];
+
+  Object.values(all).forEach(node => {
+    const meta = node.meta || node;
+    if (fecha && meta.fecha !== fecha) return;
+    if (turno && meta.turno !== turno) return;
+    if (hornoSel && meta.horno !== hornoSel) return;
+
+    const lecturas = node.lecturas ? Object.values(node.lecturas) : [];
+    lecturas.forEach(r => {
+      excelData.push({
+        Horno: meta.horno,
+        Fecha: meta.fecha || '',
+        Turno: meta.turno || '',
+        Inicio: meta.horaInicio || '',
+        Fin: meta.horaFin || '',
+        Hora: r.hora || '',
+        Zona1: r.zona1 || '',
+        Zona2: r.zona2 || '',
+        Zona3: r.zona3 || '',
+        Zona4: r.zona4 || '',
+        SetPoint: r.setPoint || '',
+        Observaciones: meta.observaciones || ''
+      });
+    });
+  });
+
+  if (excelData.length === 0) {
+    alert("No hay datos para exportar");
+    return;
+  }
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(excelData);
+  XLSX.utils.book_append_sheet(wb, ws, "Históricos");
+  XLSX.writeFile(wb, "historicos.xlsx");
 });
+
 document.getElementById('btnExportPDF').addEventListener('click', ()=>{ 
   html2canvas(historicosGrid).then(canvas=>{
     const pdf=new jspdf.jsPDF('l','pt','a4'); 
@@ -337,6 +376,7 @@ document.getElementById('btnExportJPG').addEventListener('click', ()=>{
 </script>
 </body>
 </html>
+
 
 
 
